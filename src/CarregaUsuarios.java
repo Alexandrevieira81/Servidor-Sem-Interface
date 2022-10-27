@@ -49,6 +49,12 @@ public class CarregaUsuarios {
      */
     public Usuario localizarUsuario(String login, String senha) {
         int i;
+        
+            /*
+            Como ele pode retornar um objeto, precisamos retornar null caso ocorra uma falha
+            esse null é capturado pela Exception na tela que chama esse função
+            */
+
         for (i = 0; i < this.usuarios.length; i++) {
 
             if ((this.usuarios[i].getRa().equals(login)) && (this.usuarios[i].getSenha().equals(senha))) {
@@ -68,6 +74,11 @@ public class CarregaUsuarios {
      */
     public Usuario gravarUsuario(String login, String ra, String senha, Integer categoria, String descricao) {
         int i;
+        
+        /*
+            Como ele pode retornar um objeto, precisamos retornar null caso ocorra uma falha
+            esse null é capturado pela Exception na tela que chama esse função
+        */
 
         for (i = 0; i < this.usuarios.length; i++) {
             if (this.usuarios[i] == null) {
@@ -91,6 +102,11 @@ public class CarregaUsuarios {
 
     public boolean localizarUsuarioCadastrado(String login) {
         int i;
+        
+        /*
+             Aqui ele pode devolver tru ou falso, pois só precisamos saber
+             se ele encontrou o RA já
+        */
         for (i = 0; i < this.usuarios.length; i++) {
 
             if (this.usuarios[i] == null) {

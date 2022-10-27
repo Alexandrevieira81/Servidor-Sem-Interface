@@ -26,12 +26,20 @@ public class ChatServer {
     private final int PORT = 8099;
     private ServerSocket serverSocket;
     /*
+       " private final List<ClientSocket> clients = new LinkedList();"
+    
         Lista que conterá todos os usuários conectados, ela varia de acordo
         com a entrada e saídas desses usuários no servidor.Essa lista vai auxiliar 
         o envio de mensagens privadas e envio da lista dos usuários online, além
         de controlar se um usauário já está logado no servidor.
      */
     private final List<ClientSocket> clients = new LinkedList();
+    
+    /*
+        private CarregaUsuarios listarUsuarios = new CarregaUsuarios();
+        Esse objeto tem as funções que serão nosso "Banco de Dados"
+    
+    */
     private CarregaUsuarios listarUsuarios = new CarregaUsuarios();
 
     JSONObject retorno = null;
@@ -119,9 +127,11 @@ public class ChatServer {
                     String ra = (String) params.get("ra");
                     user = listarUsuarios.localizarUsuario(ra, senha);//localiza o usuário cadastrado pelo ra e senha
 
-                    if (clients.size() > 0) {//Evita a ocorrência do erro de nullpointer da thread caso a lista clients esteja vazia
-
-                        if (user.getDisponibilidade() != 0) {
+                    if (clients.size() > 0) {
+                    /*Evita a ocorrência do erro de nullpointer da thread caso a lista clients esteja vazia
+                       Também verifica se é a primeira conexão do servidor
+                    */
+                        if (user.getDisponibilidade() != 0) {// Pega um usuário já logado
                             /*
                             retorno = new JSONObject() cria um novo objeto dentro da
                             varável retorno, evitando assim que informações permancenaçam 
@@ -206,6 +216,7 @@ public class ChatServer {
                         clientSocket.sendMsg(retorno.toJSONString());
 
                         System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toJSONString());
+                        //Comentada para não enviar logs desnecessáriospara a primeira apresentação
                         //this.BroadcastingLogar(clientSocket);
 
                     } else {
@@ -501,6 +512,11 @@ public class ChatServer {
                 retorno.put("status", 200);
                 retorno.put("mensagem", "lista de usuarios");
                 retorno.put("dados", dados);
+                
+                /*
+                    A próxima linha abaixo que mandam a lista de usuários online, a segunda faz o log no servidor
+                    A terceira foi um versão feita na mão, foi deixada como modelo, caso necessite voltar algo
+                */
 
                 //clientSocket.sendMsg(retorno.toString().replace("\"" + "[", "[").replace("]" + "\"", "]").replace("\\", ""));
                 //System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toString().replace("\"" + "[", "[").replace("]" + "\"", "]").replace("\\", ""));
@@ -546,7 +562,11 @@ public class ChatServer {
                         retorno.put("status", 200);
                         retorno.put("mensagem", "lista de usuarios");
                         retorno.put("dados", dados);
-
+                        
+                         /*
+                            A próxima linha abaixo que mandam a lista de usuários online, a segunda faz o log no servidor
+                            A terceira foi um versão feita na mão, foi deixada como modelo, caso necessite voltar algo
+                        */
                         //clientSocket.sendMsg(retorno.toString().replace("\"" + "[", "[").replace("]" + "\"", "]").replace("\\", ""));
                         //System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toString().replace("\"" + "[", "[").replace("]" + "\"", "]").replace("\\", ""));
                         //clientSocket.sendMsg("{\"operacao\":\"lista\",\"mensagem\":\"Lista de Usuários\",\"dados\":{\"usuarios\":[" + clientsP.toString().replace("[", "").replace("]", "").replace(" ", "") + "]}}");
