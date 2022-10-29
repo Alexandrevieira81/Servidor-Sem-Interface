@@ -72,25 +72,18 @@ public class CarregaUsuarios {
         Cadastra um novo usuário e o adiciona na primeira posição null que estiver
         disponível no vetor.
      */
-    public Usuario gravarUsuario(String login, String ra, String senha, Integer categoria, String descricao) {
+    public void gravarUsuario(String login, String ra, String senha, Integer categoria, String descricao) {
         int i;
         
-        /*
-            Como ele pode retornar um objeto, precisamos retornar null caso ocorra uma falha
-            esse null é capturado pela Exception na tela que chama esse função
-        */
-
         for (i = 0; i < this.usuarios.length; i++) {
             if (this.usuarios[i] == null) {
 
                 this.usuarios[i] = new Usuario(login, ra, senha, categoria, descricao,0);
 
-                return this.usuarios[i];
+                break;
             }
 
         }
-
-        return null;
     }
 
     /*

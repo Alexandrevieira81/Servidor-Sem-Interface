@@ -36,11 +36,11 @@ public class ChatServer {
     private final List<ClientSocket> clients = new LinkedList();
     
     /*
-        private CarregaUsuarios listarUsuarios = new CarregaUsuarios();
+        private CarregaUsuarios usuarios = new CarregaUsuarios();
         Esse objeto tem as funções que serão nosso "Banco de Dados"
     
     */
-    private CarregaUsuarios listarUsuarios = new CarregaUsuarios();
+    private CarregaUsuarios usuarios = new CarregaUsuarios();
 
     JSONObject retorno = null;
     JSONObject dados = null;
@@ -125,7 +125,7 @@ public class ChatServer {
                     params = (JSONObject) json.get("parametros");
                     String senha = (String) params.get("senha");
                     String ra = (String) params.get("ra");
-                    user = listarUsuarios.localizarUsuario(ra, senha);//localiza o usuário cadastrado pelo ra e senha
+                    user = usuarios.localizarUsuario(ra, senha);//localiza o usuário cadastrado pelo ra e senha
 
                     if (clients.size() > 0) {
                     /*Evita a ocorrência do erro de nullpointer da thread caso a lista clients esteja vazia
@@ -189,7 +189,7 @@ public class ChatServer {
 
                         /*
                             Esse parte faz o conexão caso não exista ninguém online, ou seja, a lista de clients
-                            estaja vazia, porém a linha "user = listarUsuarios.localizarUsuario(ra, senha);" já
+                            estaja vazia, porém a linha "user = usuarios.localizarUsuario(ra, senha);" já
                             retornou um usário válido.
                            
                          */
@@ -238,17 +238,22 @@ public class ChatServer {
                 } else if (operacao.equals("cadastrar")) {
 
                     params = (JSONObject) json.get("parametros");
-                    String nome = (String) params.get("nome");
-                    String senha = (String) params.get("senha");
-                    String ra = (String) params.get("ra");
-                    Integer categoria = Integer.parseInt(params.get("categoria_id").toString());
-                    String descricao = (String) params.get("descricao");
 
                     dados = new JSONObject();
                     retorno = new JSONObject();
                     usuario = new JSONObject();
-
-                    if (listarUsuarios.localizarUsuarioCadastrado(ra)) {
+                    
+                    if (!validarParametros(params)) {
+                        
+                        retorno.put("status", 400);
+                        retorno.put("mensagem", "Parâmetros enviados não correspondem à operação!");
+                        retorno.put("dados", dados);
+                        clientSocket.sendMsg(retorno.toJSONString());
+                        System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toJSONString());
+                        clientSocket.sendMsg(null);
+                        clientSocket.closeInOut();
+                        System.out.println("Socket fechado para o cliente:Cadastro " + clientSocket.getRemoteSocketAddress());
+                    } else if (usuarios.localizarUsuarioCadastrado((String) params.get("ra"))) {
 
                         retorno.put("status", 202);
                         retorno.put("mensagem", "Usuário já encontra-se cadastrado");
@@ -259,37 +264,43 @@ public class ChatServer {
                         clientSocket.closeInOut();
                         System.out.println("Socket fechado para o cliente:Cadastro " + clientSocket.getRemoteSocketAddress());
 
-                    } else if (listarUsuarios.gravarUsuario(nome, ra, senha, categoria, descricao) != null) {
-
-                        usuario.put("nome", nome);
-                        usuario.put("ra", ra);
-                        usuario.put("senha", senha);
-                        usuario.put("categoria_id", categoria);
-                        usuario.put("descricao", descricao);
-
-                        retorno.put("status", 201);
-                        retorno.put("mensagem", "Cadastro efetuado com Sucesso");
-                        dados.put("usuario", usuario);
-                        retorno.put("dados", dados);
-                        clientSocket.sendMsg(retorno.toJSONString());
-                        System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toJSONString());
-                        clientSocket.sendMsg(null);
-                        clientSocket.closeInOut();
-                        System.out.println("Socket fechado para o cliente:Cadastro " + clientSocket.getRemoteSocketAddress());
-
                     } else {
-                        System.out.println("Erro no Servidor!");
-                        retorno = new JSONObject();
-                        dados = new JSONObject();
-                        retorno.put("status", 500);
-                        retorno.put("mensagem", "Erro no Protocolo de Cadastro!");
-                        retorno.put("dados", dados);
-                        System.out.println("Indo pro cliente: " + retorno.toJSONString());
-                        clientSocket.sendMsg(retorno.toJSONString());
-                        System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toJSONString());
-                        clientSocket.closeInOut();
-                        System.out.println("Socket fechado para o cliente: " + clientSocket.getRemoteSocketAddress());
+                        
+                        try {
+                            
+                            String nome = (String) params.get("nome");
+                            String senha = (String) params.get("senha");
+                            String ra = (String) params.get("ra");
+                            Integer categoria = Integer.parseInt(params.get("categoria_id").toString());
+                            String descricao = (String) params.get("descricao");
+                            
+                            usuarios.gravarUsuario(nome, ra, senha, categoria, descricao);
+                        
+                            usuario.put("nome", nome);
+                            usuario.put("ra", ra);
+                            usuario.put("senha", senha);
+                            usuario.put("categoria_id", categoria);
+                            usuario.put("descricao", descricao);
 
+                            retorno.put("status", 201);
+                            retorno.put("mensagem", "Cadastro efetuado com Sucesso");
+                            dados.put("usuario", usuario);
+                            retorno.put("dados", dados);
+                            clientSocket.sendMsg(retorno.toJSONString());
+                        } catch (Exception e) {
+                            
+                            retorno = new JSONObject();
+                            dados = new JSONObject();
+                            
+                            retorno.put("status", 500);
+                            retorno.put("mensagem", "Erro no Protocolo de Cadastro!");
+                            retorno.put("dados", dados);
+                        } finally {
+                            System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toJSONString());
+                            clientSocket.sendMsg(null);
+                            clientSocket.closeInOut();
+                            System.out.println("Socket fechado para o cliente:Cadastro " + clientSocket.getRemoteSocketAddress());
+                        }
                     }
 
                 }
@@ -328,7 +339,7 @@ public class ChatServer {
                     params = (JSONObject) json.get("parametros");
                     String senhaLogout = (String) params.get("senha");
                     String raLogout = (String) params.get("ra");
-                    user = listarUsuarios.localizarUsuario(raLogout, senhaLogout);
+                    user = usuarios.localizarUsuario(raLogout, senhaLogout);
 
                     if (user.getDisponibilidade() == 0) {
 
@@ -604,6 +615,35 @@ public class ChatServer {
                     iterator.remove();
                 }
             }
+        }
+    }
+    
+    private boolean validarParametros(JSONObject params) {
+        
+        try {
+            
+            String nome = (String) params.get("nome");
+            String senha = (String) params.get("senha");
+            String ra = (String) params.get("ra");
+            Integer categoria = Integer.parseInt(params.get("categoria_id").toString());
+            String descricao = (String) params.get("descricao");
+            
+            if (nome == null || nome.trim().equals(""))
+                return false;
+            else if (senha == null || senha.trim().equals(""))
+                return false;
+            else if (ra == null || ra.length() != 7)
+                return false;
+            else if (categoria == null || categoria < 0 || categoria > 7)
+                return false;
+            else if (descricao == null || descricao.trim().equals(""))
+                return false;
+            
+            return true;
+            
+        } catch (Exception e) {
+            
+            return false;
         }
     }
 
