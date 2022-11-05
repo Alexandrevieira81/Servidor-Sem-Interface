@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,12 +35,12 @@ public class ChatServer {
         de controlar se um usauário já está logado no servidor.
      */
     private final List<ClientSocket> clients = new LinkedList();
-    
+
     /*
         private CarregaUsuarios usuarios = new CarregaUsuarios();
         Esse objeto tem as funções que serão nosso "Banco de Dados"
     
-    */
+     */
     private CarregaUsuarios usuarios = new CarregaUsuarios();
 
     JSONObject retorno = null;
@@ -128,9 +129,9 @@ public class ChatServer {
                     user = usuarios.localizarUsuario(ra, senha);//localiza o usuário cadastrado pelo ra e senha
 
                     if (clients.size() > 0) {
-                    /*Evita a ocorrência do erro de nullpointer da thread caso a lista clients esteja vazia
+                        /*Evita a ocorrência do erro de nullpointer da thread caso a lista clients esteja vazia
                        Também verifica se é a primeira conexão do servidor
-                    */
+                         */
                         if (user.getDisponibilidade() != 0) {// Pega um usuário já logado
                             /*
                             retorno = new JSONObject() cria um novo objeto dentro da
@@ -182,7 +183,8 @@ public class ChatServer {
 
                             System.out.println("Enviado para : " + clientSocket.getRemoteSocketAddress() + retorno.toJSONString());
 
-                            //this.BroadcastingLogar(clientSocket);//chama o função que envia a lista de usuários online atualizada
+                            this.BroadcastingLogar(clientSocket);//chama o função que envia a lista de usuários online atualizada
+
                         }
 
                     } else if (clients.size() <= 0) {
@@ -217,7 +219,8 @@ public class ChatServer {
 
                         System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toJSONString());
                         //Comentada para não enviar logs desnecessáriospara a primeira apresentação
-                        //this.BroadcastingLogar(clientSocket);
+
+                        this.BroadcastingLogar(clientSocket);//chama o função que envia a lista de usuários online atualizada
 
                     } else {
 
@@ -242,9 +245,9 @@ public class ChatServer {
                     dados = new JSONObject();
                     retorno = new JSONObject();
                     usuario = new JSONObject();
-                    
+
                     if (!validarParametros(params)) {
-                        
+
                         retorno.put("status", 400);
                         retorno.put("mensagem", "Parâmetros enviados não correspondem à operação!");
                         retorno.put("dados", dados);
@@ -265,17 +268,17 @@ public class ChatServer {
                         System.out.println("Socket fechado para o cliente:Cadastro " + clientSocket.getRemoteSocketAddress());
 
                     } else {
-                        
+
                         try {
-                            
+
                             String nome = (String) params.get("nome");
                             String senha = (String) params.get("senha");
                             String ra = (String) params.get("ra");
                             Integer categoria = Integer.parseInt(params.get("categoria_id").toString());
                             String descricao = (String) params.get("descricao");
-                            
+
                             usuarios.gravarUsuario(nome, ra, senha, categoria, descricao);
-                        
+
                             usuario.put("nome", nome);
                             usuario.put("ra", ra);
                             usuario.put("senha", senha);
@@ -288,10 +291,10 @@ public class ChatServer {
                             retorno.put("dados", dados);
                             clientSocket.sendMsg(retorno.toJSONString());
                         } catch (Exception e) {
-                            
+
                             retorno = new JSONObject();
                             dados = new JSONObject();
-                            
+
                             retorno.put("status", 500);
                             retorno.put("mensagem", "Erro no Protocolo de Cadastro!");
                             retorno.put("dados", dados);
@@ -305,7 +308,7 @@ public class ChatServer {
 
                 }
 
-                json = (JSONObject) parserMessage.parse(msg);
+                //json = (JSONObject) parserMessage.parse(msg);
 
                 /*
                     Esse Ifs evitam que um protocolo incorreto trave o sistema
@@ -328,6 +331,13 @@ public class ChatServer {
                     retorno.put("status", 200);
                     retorno.put("mensagem", "lista de Usuários");
                     retorno.put("dados", dados);
+                    params = (JSONObject) json.get("parametros");
+                    Integer cat = (Integer.valueOf(params.get("categoria_id").toString()));
+
+                    clientSocket.setCatSelecionada(cat);
+
+                    clients.set(clients.indexOf(clientSocket), clientSocket);
+
                     this.BroadcastingLogar(clientSocket);
                     //clientSocket.sendMsg(retorno.toString().replace("\"" + "[", "[").replace("]" + "\"", "]").replace("\\", "")); AQUI MANDAVA TODOS OS USUÁRIOS
                     //System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toJSONString());
@@ -362,7 +372,7 @@ public class ChatServer {
                         clientSocket.sendMsg(retorno.toJSONString());
                         System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toJSONString());
                         clients.remove(clientSocket);
-                        //this.BroadcastingLogar(clientSocket);//manda a lista de usuários atualizada excluíndo o usuário que está deslogando
+                        this.BroadcastingLogar(clientSocket);//manda a lista de usuários atualizada excluíndo o usuário que está deslogando
                         clientSocket.closeInOut();
                         System.out.println("Socket fechado para o cliente LOGOUT " + clientSocket.getRemoteSocketAddress());
                         break;
@@ -480,12 +490,15 @@ public class ChatServer {
 
     }
 
-    private void BroadcastingLogar(ClientSocket sender) {
+    private void BroadcastingLogar(ClientSocket sender) throws IOException {
 
         JSONObject retorno = null;
         JSONObject dados = null;
         retorno = new JSONObject();
         dados = new JSONObject();
+        Iterator<ClientSocket> iterator;
+        Iterator<ClientSocket> iteratorP;
+        Iterator<ClientSocket> iteratorCat;
 
 
         /*
@@ -495,12 +508,13 @@ public class ChatServer {
         
          */
         List<ClientSocket> clientsAux = new LinkedList();
-
         clientsAux.addAll(clients);
-
         clientsAux.remove(sender);
 
-        Iterator<ClientSocket> iterator = clients.iterator();
+        /*
+            chama a função que filtra por categoria
+         */
+        iterator = clients.iterator();
 
         while (iterator.hasNext()) {
             /*
@@ -517,31 +531,43 @@ public class ChatServer {
                     clientsAux o próprio requisitante já foi excluído, sendo assim apenas outros 
                     usuários são enviados para ele.
                  */
+                iteratorCat = clients.iterator();
+                while (iteratorCat.hasNext()) {
+                    ClientSocket clientSocketCat = iteratorCat.next();
+                    System.out.println("Categoria selecionada " + sender.getCatSelecionada() + "==" + clientSocketCat.getUsuario().getCategoria());
+
+                    if ((sender.getCatSelecionada() != clientSocketCat.getUsuario().getCategoria()) || (clientSocketCat.getCatSelecionada() == -1)) {
+
+                        clientsAux.remove(clientSocketCat);
+                    }
+                }
 
                 dados.put("usuarios", clientsAux.toString());
 
-                retorno.put("status", 200);
+                retorno.put("status", 203);
                 retorno.put("mensagem", "lista de usuarios");
                 retorno.put("dados", dados);
-                
+
                 /*
                     A próxima linha abaixo que mandam a lista de usuários online, a segunda faz o log no servidor
                     A terceira foi um versão feita na mão, foi deixada como modelo, caso necessite voltar algo
-                */
+                 */
+                clientSocket.sendMsg(retorno.toString().replace("\"" + "[", "[").replace("]" + "\"", "]").replace("\\", ""));
 
-                //clientSocket.sendMsg(retorno.toString().replace("\"" + "[", "[").replace("]" + "\"", "]").replace("\\", ""));
-                //System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toString().replace("\"" + "[", "[").replace("]" + "\"", "]").replace("\\", ""));
-                // clientSocket.sendMsg("{\"operacao\":\"lista\",\"mensagem\":\"Lista de Usuários\",\"dados\":{\"usuarios\":[" + clientsAux.toString().replace("[", "").replace("]", "").replace(" ", "") + "]}}");
+                System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toString().replace("\"" + "[", "[").replace("]" + "\"", "]").replace("\\", ""));
+                // clientSocket.sendMsg("{\"operacao\":\"lista\",\"mensagem\":\"Lista de Usuários\",\"dados\":{\"usuarios\":[" + clientsAux.toString().replace("[", "").replace("]", "").replace(" ", "") + "]}}"); 
+
             } else {
                 List<ClientSocket> clientsP = new LinkedList();
                 clientsP.addAll(clients);
+
                 /*
                 clientsP recebera todos os dados sempre que entrar no else, pois ela terá que encontrar
                     o cliente que não é o requisitante, porém não poderá enviar o dados dele para ele mesmo,
                     caso ele não receba cara vez que entra no laço não será possível comparar com todos os clientes
                     online existentes
                  */
-                Iterator<ClientSocket> iteratorP = clientsP.iterator();
+                iteratorP = clients.iterator();
 
                 while (iteratorP.hasNext()) {
                     ClientSocket clientSocketP = iteratorP.next();
@@ -564,25 +590,45 @@ public class ChatServer {
                         já filtrada. Lembrando que o requisitante da conexão ou desconexão já recebe sua lista no primeiro
                         if.
                          */
+                        iteratorCat = clients.iterator();
+                        while (iteratorCat.hasNext()) {
+                            ClientSocket clientSocketCat = iteratorCat.next();
+                            System.out.println("Categoria selecionada " + clientSocket.getCatSelecionada() + "==" + clientSocketCat.getUsuario().getCategoria());
+
+                            if ((clientSocket.getCatSelecionada() != clientSocketCat.getUsuario().getCategoria()) || (clientSocketCat.getCatSelecionada() == -1)) {
+
+                                clientsP.remove(clientSocketCat);
+                            }
+                        }
+
                         clientsP.remove(clientSocket);
 
                         dados = new JSONObject();
 
                         dados.put("usuarios", clientsP.toString());
 
-                        retorno.put("status", 200);
+                        retorno.put("status", 203);
                         retorno.put("mensagem", "lista de usuarios");
                         retorno.put("dados", dados);
-                        
-                         /*
+
+                        /*
                             A próxima linha abaixo que mandam a lista de usuários online, a segunda faz o log no servidor
                             A terceira foi um versão feita na mão, foi deixada como modelo, caso necessite voltar algo
-                        */
-                        //clientSocket.sendMsg(retorno.toString().replace("\"" + "[", "[").replace("]" + "\"", "]").replace("\\", ""));
-                        //System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toString().replace("\"" + "[", "[").replace("]" + "\"", "]").replace("\\", ""));
-                        //clientSocket.sendMsg("{\"operacao\":\"lista\",\"mensagem\":\"Lista de Usuários\",\"dados\":{\"usuarios\":[" + clientsP.toString().replace("[", "").replace("]", "").replace(" ", "") + "]}}");
-                        break;
+                         */
+                        if (!clientSocket.sendMsg(retorno.toString().replace("\"" + "[", "[").replace("]" + "\"", "]").replace("\\", ""))) {
+                            
+                            Usuario user = new Usuario();
+                            user = usuarios.localizarUsuario(clientSocket.getUsuario().getRa(),clientSocket.getUsuario().getSenha());
+                            user.setDisponibilidade(0);
+                            clients.remove(clientSocket);
+                            clientSocket.closeInOut();
+                            System.out.println("passou remove 2");
 
+                        } else {
+                            System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toString().replace("\"" + "[", "[").replace("]" + "\"", "]").replace("\\", ""));
+                            //clientSocket.sendMsg("{\"operacao\":\"lista\",\"mensagem\":\"Lista de Usuários\",\"dados\":{\"usuarios\":[" + clientsP.toString().replace("[", "").replace("]", "").replace(" ", "") + "]}}");  
+                        }
+                        break;
                     }
 
                 }
@@ -617,32 +663,33 @@ public class ChatServer {
             }
         }
     }
-    
+
     private boolean validarParametros(JSONObject params) {
-        
+
         try {
-            
+
             String nome = (String) params.get("nome");
             String senha = (String) params.get("senha");
             String ra = (String) params.get("ra");
             Integer categoria = Integer.parseInt(params.get("categoria_id").toString());
             String descricao = (String) params.get("descricao");
-            
-            if (nome == null || nome.trim().equals(""))
+
+            if (nome == null || nome.trim().equals("")) {
                 return false;
-            else if (senha == null || senha.trim().equals(""))
+            } else if (senha == null || senha.trim().equals("")) {
                 return false;
-            else if (ra == null || ra.length() != 7)
+            } else if (ra == null || ra.length() != 7) {
                 return false;
-            else if (categoria == null || categoria < 0 || categoria > 7)
+            } else if (categoria == null || categoria < 0 || categoria > 7) {
                 return false;
-            else if (descricao == null || descricao.trim().equals(""))
+            } else if (descricao == null || descricao.trim().equals("")) {
                 return false;
-            
+            }
+
             return true;
-            
+
         } catch (Exception e) {
-            
+
             return false;
         }
     }

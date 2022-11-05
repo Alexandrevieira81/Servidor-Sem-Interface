@@ -31,7 +31,7 @@ public class CarregaUsuarios {
         }
 
         Usuario user1 = new Usuario("Alex", "1488880", "123", 1, "Programador",0);
-        Usuario user2 = new Usuario("Ive", "4788880", "321", 2, "Designer",0);
+        Usuario user2 = new Usuario("Ive", "4788880", "321", 1, "Designer",0);
         Usuario user3 = new Usuario("Breno", "1202020", "123", 1, "Programador",0);
         Usuario user4 = new Usuario("Teste1", "9999999", "123", 3, "Serviços Gerais",0);
         Usuario user5 = new Usuario("Teste2", "7777777", "123", 3, "Serviços Gerais",0);
