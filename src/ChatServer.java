@@ -168,7 +168,7 @@ public class ChatServer {
                             usuario.put("nome", user.getNome());
                             usuario.put("ra", user.getRa());
                             usuario.put("senha", user.getSenha());
-                            usuario.put("categoria", user.getCategoria());
+                            usuario.put("categoria_id", user.getCategoria());
                             usuario.put("descricao", user.getDescricao());
                             usuario.put("disponibilidade", user.getDisponibilidade());
                             System.out.println("Cliente Logado: " + user.getNome());//Exibe o nome do usuário logado
@@ -204,7 +204,7 @@ public class ChatServer {
                         usuario.put("nome", user.getNome());
                         usuario.put("ra", user.getRa());
                         usuario.put("senha", user.getSenha());
-                        usuario.put("categoria", user.getCategoria());
+                        usuario.put("categoria_id", user.getCategoria());
                         usuario.put("descricao", user.getDescricao());
                         usuario.put("disponibilidade", user.getDisponibilidade());
                         System.out.println("Cliente Logado: " + user.getNome());//Exibe o nome do usuário logado
