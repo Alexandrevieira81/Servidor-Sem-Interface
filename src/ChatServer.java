@@ -24,7 +24,7 @@ import org.json.simple.parser.ParseException;
  */
 public class ChatServer {
 
-    private final int PORT = 8099;
+    private final int PORT = 23000;
     private ServerSocket serverSocket;
     /*
        " private final List<ClientSocket> clients = new LinkedList();"
@@ -183,7 +183,7 @@ public class ChatServer {
 
                             System.out.println("Enviado para : " + clientSocket.getRemoteSocketAddress() + retorno.toJSONString());
 
-                            this.BroadcastingLogar(clientSocket);//chama o função que envia a lista de usuários online atualizada
+//                            this.BroadcastingLogar(clientSocket);//chama o função que envia a lista de usuários online atualizada
 
                         }
 
@@ -220,7 +220,7 @@ public class ChatServer {
                         System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toJSONString());
                         //Comentada para não enviar logs desnecessáriospara a primeira apresentação
 
-                        this.BroadcastingLogar(clientSocket);//chama o função que envia a lista de usuários online atualizada
+//                        this.BroadcastingLogar(clientSocket);//chama o função que envia a lista de usuários online atualizada
 
                     } else {
 
@@ -338,7 +338,7 @@ public class ChatServer {
 
                     clients.set(clients.indexOf(clientSocket), clientSocket);
 
-                    this.BroadcastingLogar(clientSocket);
+//                    this.BroadcastingLogar(clientSocket);
                     //clientSocket.sendMsg(retorno.toString().replace("\"" + "[", "[").replace("]" + "\"", "]").replace("\\", "")); AQUI MANDAVA TODOS OS USUÁRIOS
                     //System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toJSONString());
 
@@ -372,7 +372,7 @@ public class ChatServer {
                         clientSocket.sendMsg(retorno.toJSONString());
                         System.out.println("Enviado para: " + clientSocket.getRemoteSocketAddress() + retorno.toJSONString());
                         clients.remove(clientSocket);
-                        this.BroadcastingLogar(clientSocket);//manda a lista de usuários atualizada excluíndo o usuário que está deslogando
+//                        this.BroadcastingLogar(clientSocket);//manda a lista de usuários atualizada excluíndo o usuário que está deslogando
                         clientSocket.closeInOut();
                         System.out.println("Socket fechado para o cliente LOGOUT " + clientSocket.getRemoteSocketAddress());
                         break;
@@ -476,7 +476,7 @@ public class ChatServer {
                 } else if (operacao.equals(" ")) {
                     clientSocket.getUsuario().setDisponibilidade(0);//quando cliente desconecta no "X" não atualiza a disponibilidade deixar a variável "user" global e atualizar ela
                     clients.remove(clientSocket);
-                    this.BroadcastingLogar(clientSocket);
+//                    this.BroadcastingLogar(clientSocket);
                     clientSocket.closeInOut();
                     System.out.println("Socket fechado para o cliente: Saída Forçada X Cliente" + clientSocket.getRemoteSocketAddress());
                 }
